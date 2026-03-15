@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hooke's Law Simulation</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --danger: #f87171;
+      --line: #334155;
+      --card: #0b1220;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #0b1020, #0f172a);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+
+    .control {
+      margin-bottom: 16px;
+    }
+
+    .control label {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .control span {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: white;
+      background: var(--accent);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button.secondary { background: #475569; }
+    button.success { background: var(--accent-2); }
+    button.danger { background: var(--danger); }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat strong {
+      font-size: 1.05rem;
+    }
+
+    .canvas-wrap {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 16px;
+    }
+
+    canvas {
+      width: 100%;
+      background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+      border-radius: 18px;
+      border: 1px solid #cbd5e1;
+      display: block;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.93rem;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+    }
+
+    th {
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .table-wrap {
+      max-height: 260px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hooke's Law Simulation</h1>
+    <div class="subtitle">Measure displacement, collect data points, and estimate the spring constant <strong>k</strong> using a best-fit line.</div>
+
+    <div class="grid">
+      <div class="panel">
+        <div class="section-title">Controls</div>
+
+        <div class="control">
+          <label>
+            <span>True spring constant k</span>
+            <strong id="kValue">20.0 N/m</strong>
+          </label>
+          <input id="kSlider" type="range" min="5" max="80" step="0.5" value="20" />
+        </div>
+
+        <div class="control">
+          <label>
+            <span>Mass</span>
+            <strong id="massValue">0.50 kg</strong>
+          </label>
+          <input id="massSlider" type="range" min="0.05" max="2.5" step="0.01" value="0.50" />
+        </div>
+
+        <div class="control">
+          <label>
+            <span>Noise level</span>
+            <strong id="noiseValue">0.000 m</strong>
+          </label>
+          <input id="noiseSlider" type="range" min="0" max="0.03" step="0.001" value="0" />
+        </div>
+
+        <div class="button-row">
+          <button id="addPointBtn" class="success">Add Data Point</button>
+          <button id="resetBtn" class="danger">Reset Data</button>
+          <button id="randomBtn" class="secondary">Random k</button>
+          <button id="toggleFitBtn">Hide Fit Line</button>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat">
+            <small>Force</small>
+            <strong id="forceDisplay">4.90 N</strong>
+          </div>
+          <div class="stat">
+            <small>Displacement</small>
+            <strong id="dispDisplay">0.245 m</strong>
+          </div>
+          <div class="stat">
+            <small>Estimated k</small>
+            <strong id="estimatedK">—</strong>
+          </div>
+          <div class="stat">
+            <small>Intercept b</small>
+            <strong id="estimatedB">—</strong>
+          </div>
+          <div class="stat">
+            <small>R²</small>
+            <strong id="r2Value">—</strong>
+          </div>
+          <div class="stat">
+            <small>Points</small>
+            <strong id="pointsCount">0</strong>
+          </div>
+        </div>
+
+        <div class="note">
+          Model used: <strong>F = kx</strong>, where <strong>F = mg</strong>.<br>
+          The fitted line is shown as <strong>F = ax + b</strong>. Ideally, <strong>a ≈ k</strong> and <strong>b ≈ 0</strong>.
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <div class="panel">
+          <div class="section-title">Spring View</div>
+          <canvas id="springCanvas" width="760" height="320"></canvas>
+        </div>
+
+        <div class="panel">
+          <div class="section-title">Force vs Displacement Graph</div>
+          <canvas id="graphCanvas" width="760" height="360"></canvas>
+        </div>
+
+        <div class="panel">
+          <div class="section-title">Collected Data</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Mass (kg)</th>
+                  <th>Force (N)</th>
+                  <th>Displacement (m)</th>
+                </tr>
+              </thead>
+              <tbody id="dataBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const g = 9.8;
+    const state = {
+      trueK: 20,
+      mass: 0.5,
+      noise: 0,
+      showFit: true,
+      data: []
+    };
+
+    const els = {
+      kSlider: document.getElementById('kSlider'),
+      massSlider: document.getElementById('massSlider'),
+      noiseSlider: document.getElementById('noiseSlider'),
+      kValue: document.getElementById('kValue'),
+      massValue: document.getElementById('massValue'),
+      noiseValue: document.getElementById('noiseValue'),
+      forceDisplay: document.getElementById('forceDisplay'),
+      dispDisplay: document.getElementById('dispDisplay'),
+      estimatedK: document.getElementById('estimatedK'),
+      estimatedB: document.getElementById('estimatedB'),
+      r2Value: document.getElementById('r2Value'),
+      pointsCount: document.getElementById('pointsCount'),
+      dataBody: document.getElementById('dataBody'),
+      toggleFitBtn: document.getElementById('toggleFitBtn')
+    };
+
+    const springCanvas = document.getElementById('springCanvas');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const sctx = springCanvas.getContext('2d');
+    const gctx = graphCanvas.getContext('2d');
+
+    function currentForce() {
+      return state.mass * g;
+    }
+
+    function idealDisplacement() {
+      return currentForce() / state.trueK;
+    }
+
+    function measuredDisplacement() {
+      const noise = (Math.random() * 2 - 1) * state.noise;
+      return Math.max(0, idealDisplacement() + noise);
+    }
+
+    function updateLabels() {
+      els.kValue.textContent = `${state.trueK.toFixed(1)} N/m`;
+      els.massValue.textContent = `${state.mass.toFixed(2)} kg`;
+      els.noiseValue.textContent = `${state.noise.toFixed(3)} m`;
+      els.forceDisplay.textContent = `${currentForce().toFixed(2)} N`;
+      els.dispDisplay.textContent = `${idealDisplacement().toFixed(3)} m`;
+      els.pointsCount.textContent = state.data.length;
+    }
+
+    function drawSpring() {
+      const w = springCanvas.width;
+      const h = springCanvas.height;
+      sctx.clearRect(0, 0, w, h);
+
+      sctx.fillStyle = '#e2e8f0';
+      sctx.fillRect(0, 0, w, h);
+
+      sctx.fillStyle = '#64748b';
+      sctx.fillRect(60, 24, 220, 18);
+
+      const topX = 170;
+      const topY = 42;
+      const displacementPx = Math.min(idealDisplacement() * 320, 190);
+      const springLength = 110 + displacementPx;
+      const coils = 16;
+      const amplitude = 28;
+      const bottomY = topY + springLength;
+
+      sctx.beginPath();
+      sctx.moveTo(topX, topY);
+      for (let i = 1; i <= coils; i++) {
+        const t = i / coils;
+        const y = topY + t * springLength;
+        const x = topX + (i % 2 === 0 ? amplitude : -amplitude);
+        sctx.lineTo(x, y);
+      }
+      sctx.lineTo(topX, bottomY);
+      sctx.lineWidth = 4;
+      sctx.strokeStyle = '#0f172a';
+      sctx.stroke();
+
+      sctx.fillStyle = '#1d4ed8';
+      sctx.fillRect(topX - 50, bottomY, 100, 60);
+
+      sctx.fillStyle = '#ffffff';
+      sctx.font = 'bold 22px Arial';
+      sctx.textAlign = 'center';
+      sctx.fillText(`${state.mass.toFixed(2)} kg`, topX, bottomY + 37);
+
+      sctx.strokeStyle = '#ef4444';
+      sctx.lineWidth = 3;
+      sctx.beginPath();
+      sctx.moveTo(420, topY);
+      sctx.lineTo(420, bottomY + 60);
+      sctx.stroke();
+
+      sctx.fillStyle = '#ef4444';
+      sctx.font = 'bold 18px Arial';
+      sctx.fillText(`x = ${idealDisplacement().toFixed(3)} m`, 520, (topY + bottomY) / 2);
+      sctx.fillText(`F = ${currentForce().toFixed(2)} N`, 520, (topY + bottomY) / 2 + 30);
+    }
+
+    function linearRegression(points) {
+      const n = points.length;
+      if (n < 2) return null;
+
+      let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+      for (const p of points) {
+        sumX += p.x;
+        sumY += p.y;
+        sumXY += p.x * p.y;
+        sumXX += p.x * p.x;
+      }
+
+      const denom = n * sumXX - sumX * sumX;
+      if (Math.abs(denom) < 1e-12) return null;
+
+      const a = (n * sumXY - sumX * sumY) / denom;
+      const b = (sumY - a * sumX) / n;
+
+      const meanY = sumY / n;
+      let ssRes = 0;
+      let ssTot = 0;
+      for (const p of points) {
+        const pred = a * p.x + b;
+        ssRes += (p.y - pred) ** 2;
+        ssTot += (p.y - meanY) ** 2;
+      }
+      const r2 = ssTot === 0 ? 1 : 1 - ssRes / ssTot;
+
+      return { a, b, r2 };
+    }
+
+    function drawGraph() {
+      const w = graphCanvas.width;
+      const h = graphCanvas.height;
+      const padL = 70;
+      const padR = 30;
+      const padT = 25;
+      const padB = 55;
+
+      gctx.clearRect(0, 0, w, h);
+      gctx.fillStyle = '#ffffff';
+      gctx.fillRect(0, 0, w, h);
+
+      const allX = state.data.map(p => p.x);
+      const allY = state.data.map(p => p.y);
+      allX.push(Math.max(0.4, idealDisplacement() * 1.2));
+      allY.push(Math.max(8, currentForce() * 1.2));
+
+      const maxX = Math.max(...allX, 0.3);
+      const maxY = Math.max(...allY, 5);
+
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+
+      const sx = x => padL + (x / maxX) * plotW;
+      const sy = y => h - padB - (y / maxY) * plotH;
+
+      gctx.strokeStyle = '#cbd5e1';
+      gctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const y = padT + (plotH / 5) * i;
+        gctx.beginPath();
+        gctx.moveTo(padL, y);
+        gctx.lineTo(w - padR, y);
+        gctx.stroke();
+      }
+      for (let i = 0; i <= 5; i++) {
+        const x = padL + (plotW / 5) * i;
+        gctx.beginPath();
+        gctx.moveTo(x, padT);
+        gctx.lineTo(x, h - padB);
+        gctx.stroke();
+      }
+
+      gctx.strokeStyle = '#0f172a';
+      gctx.lineWidth = 2;
+      gctx.beginPath();
+      gctx.moveTo(padL, padT);
+      gctx.lineTo(padL, h - padB);
+      gctx.lineTo(w - padR, h - padB);
+      gctx.stroke();
+
+      gctx.fillStyle = '#334155';
+      gctx.font = '14px Arial';
+      gctx.textAlign = 'center';
+      for (let i = 0; i <= 5; i++) {
+        const xVal = (maxX / 5) * i;
+        gctx.fillText(xVal.toFixed(2), padL + (plotW / 5) * i, h - padB + 22);
+      }
+      gctx.textAlign = 'right';
+      for (let i = 0; i <= 5; i++) {
+        const yVal = (maxY / 5) * i;
+        gctx.fillText(yVal.toFixed(1), padL - 10, h - padB - (plotH / 5) * i + 5);
+      }
+
+      gctx.save();
+      gctx.translate(20, h / 2);
+      gctx.rotate(-Math.PI / 2);
+      gctx.textAlign = 'center';
+      gctx.font = 'bold 16px Arial';
+      gctx.fillText('Force F (N)', 0, 0);
+      gctx.restore();
+
+      gctx.textAlign = 'center';
+      gctx.font = 'bold 16px Arial';
+      gctx.fillText('Displacement x (m)', w / 2, h - 14);
+
+      for (const p of state.data) {
+        gctx.beginPath();
+        gctx.arc(sx(p.x), sy(p.y), 5, 0, Math.PI * 2);
+        gctx.fillStyle = '#2563eb';
+        gctx.fill();
+      }
+
+      const fit = linearRegression(state.data);
+      if (fit && state.showFit) {
+        gctx.beginPath();
+        gctx.moveTo(sx(0), sy(fit.b));
+        gctx.lineTo(sx(maxX), sy(fit.a * maxX + fit.b));
+        gctx.strokeStyle = '#ef4444';
+        gctx.lineWidth = 3;
+        gctx.stroke();
+      }
+
+      if (fit) {
+        els.estimatedK.textContent = `${fit.a.toFixed(2)} N/m`;
+        els.estimatedB.textContent = `${fit.b.toFixed(2)} N`;
+        els.r2Value.textContent = fit.r2.toFixed(4);
+      } else {
+        els.estimatedK.textContent = '—';
+        els.estimatedB.textContent = '—';
+        els.r2Value.textContent = '—';
+      }
+    }
+
+    function refreshTable() {
+      els.dataBody.innerHTML = '';
+      state.data.forEach((p, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${p.mass.toFixed(2)}</td>
+          <td>${p.y.toFixed(2)}</td>
+          <td>${p.x.toFixed(3)}</td>
+        `;
+        els.dataBody.appendChild(tr);
+      });
+    }
+
+    function render() {
+      updateLabels();
+      drawSpring();
+      drawGraph();
+      refreshTable();
+    }
+
+    function addPoint() {
+      state.data.push({
+        mass: state.mass,
+        y: currentForce(),
+        x: measuredDisplacement()
+      });
+      render();
+    }
+
+    els.kSlider.addEventListener('input', e => {
+      state.trueK = parseFloat(e.target.value);
+      render();
+    });
+
+    els.massSlider.addEventListener('input', e => {
+      state.mass = parseFloat(e.target.value);
+      render();
+    });
+
+    els.noiseSlider.addEventListener('input', e => {
+      state.noise = parseFloat(e.target.value);
+      render();
+    });
+
+    document.getElementById('addPointBtn').addEventListener('click', addPoint);
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      state.data = [];
+      render();
+    });
+
+    document.getElementById('randomBtn').addEventListener('click', () => {
+      state.trueK = +(5 + Math.random() * 75).toFixed(1);
+      els.kSlider.value = state.trueK;
+      render();
+    });
+
+    els.toggleFitBtn.addEventListener('click', () => {
+      state.showFit = !state.showFit;
+      els.toggleFitBtn.textContent = state.showFit ? 'Hide Fit Line' : 'Show Fit Line';
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
